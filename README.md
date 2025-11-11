@@ -10,7 +10,7 @@ Dự án sử dụng mô hình Client-Server, với giao diện đồ họa đư
 
 ## 🚀 Tính năng chính
 
-* **Chơi 2 người (Client-Server):** Một máy tính làm Server (máy chủ) và hai máy tính làm Client (người chơi).
+* **Chơi 2 người (Client-Server):** Một máy tính làm Server (máy chủ) và hai Client (người chơi).
 * **Tự động tìm Server:** Client có thể tự động tìm thấy Server đang chạy trong cùng mạng LAN.
 * **Giao diện đồ họa (GUI):** Sử dụng thư viện Tkinter để vẽ bàn cờ, quân cờ và hiển thị trạng thái game.
 * **Luật chơi chuẩn:**
