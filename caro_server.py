@@ -34,6 +34,17 @@ class CaroServerMulti:
         self.rooms = []
         self.addr_to_room = {}
         print("Server sẵn sàng!")
+    
+    def listen_broadcast(self):
+        while True:
+            try:
+                data, addr = self.broadcast_sock.recvfrom(1024)
+                if data.decode() == "FIND_CARO_SERVER":
+                    print(f"Yêu cầu tìm phòng từ {addr}")
+                    self.broadcast_sock.sendto(b"CARO_SERVER_HERE", addr)
+            except Exception as e:
+                # print(f"Lỗi broadcast: {e}")
+                continue
 
     def listen_game(self):
         while True:
@@ -62,4 +73,56 @@ class CaroServerMulti:
                         self.rooms.append(room)
                         self.addr_to_room[addr] = room
                     
+                elif msg == "EXIT":
+                    self.handle_exit(addr)
+                
+                elif msg == "NEW_GAME":
+                    self.handle_new_game(addr)
+                
+                elif msg.startswith("MOVE"):
+                    self.handle_move(addr, msg)
+                    
+            except Exception as e:
+                print(f"Lỗi xử lý game: {e}")
+
+    def handle_exit(self, addr):
+        if addr in self.addr_to_room:
+            room = self.addr_to_room[addr]
+            opponent = room.get_opponent(addr)
+            # Thông báo cho đối thủ nếu có
+            if opponent:
+                self.sock.sendto(b"OPPONENT_DISCONNECTED", opponent)
+            # Xóa phòng
+            if room in self.rooms:
+                self.rooms.remove(room)
+            del self.addr_to_room[addr]
+            if opponent and opponent in self.addr_to_room:
+                del self.addr_to_room[opponent]
+
+    def handle_new_game(self, addr):
+        if addr in self.addr_to_room:
+            room = self.addr_to_room[addr]
+            if room.ready:
+                opponent = room.get_opponent(addr)
+                room.reset()
+                # Thông báo cho cả hai người chơi nếu có đối thủ
+                self.sock.sendto(b"NEW_GAME", addr)
+                if opponent:
+                    self.sock.sendto(b"NEW_GAME", opponent)
+
+    def handle_move(self, addr, msg):
+        if addr in self.addr_to_room:
+            room = self.addr_to_room[addr]
+            if room.ready and not room.game_over:
+                opponent = room.get_opponent(addr)
+                if opponent:
+                    print(f"Nhận MOVE từ {addr}, gửi cho {opponent}: {msg}")
+                    self.sock.sendto(msg.encode(), opponent)
+
+    def run(self):
+        threading.Thread(target=self.listen_broadcast, daemon=True).start()
+        self.listen_game()
+
+if __name__ == "__main__":
+    CaroServerMulti().run()
                     
