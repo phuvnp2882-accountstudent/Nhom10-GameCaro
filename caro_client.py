@@ -95,7 +95,32 @@ OPP_TURN_COLOR = "#d32f2f"  # đỏ
             self.highlight_win_line(self.win_line)
 
     def handle_click(self, event):
-      def draw_piece(self, row, col, piece, highlight=False):
+      
+        if self.role is None or self.turn != self.role or self.game_over or not self.server_addr or self.opponent_disconnected:
+            if self.role is None:
+                print("Chưa gán vai trò (X/O). Vui lòng đợi Server ghép cặp.")
+            return
+        
+        row, col = event.y // CELL_SIZE, event.x // CELL_SIZE
+        if 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE and self.board[row][col] is None:
+            self.board[row][col] = self.role
+            self.last_move = (row, col)
+            self.redraw_pieces()
+            self.animate_piece(row, col, self.role)
+            self.send_move(row, col)
+            win_line = self.check_win(row, col, self.role)
+            if win_line:
+                self.game_over = True
+                self.win_line = win_line
+                self.redraw_pieces()
+                self.status_label.config(text="Bạn đã thắng!", foreground=MY_TURN_COLOR)
+                self.new_game_btn.config(state=tk.NORMAL)
+                messagebox.showinfo("Kết thúc", "Chúc mừng! Bạn đã thắng!")
+            else:
+                self.turn = "O" if self.role == "X" else "X"
+                self.status_label.config(text="Đến lượt đối thủ", foreground=OPP_TURN_COLOR)
+
+    def draw_piece(self, row, col, piece, highlight=False):
         x, y = col*CELL_SIZE+CELL_SIZE//2, row*CELL_SIZE+CELL_SIZE//2
         color = "red" if piece == "O" else "blue"
         font = ("Arial", 22, "bold")
@@ -112,3 +137,58 @@ OPP_TURN_COLOR = "#d32f2f"  # đỏ
             self.window.update()
             time.sleep(0.12)
         self.redraw_pieces()
+
+# HÀM KIỂM TRA THẮNG THUA (LUẬT CHẶN 2 ĐẦU)
+    def check_win(self, row, col, piece):
+        
+        def is_valid(r, c):
+            return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
+            
+        opponent_piece = "O" if piece == "X" else "X"
+        directions = [(1, 0), (0, 1), (1, 1), (1, -1)]
+
+        for dx, dy in directions:
+            
+            r1, c1 = row, col
+            while is_valid(r1 - dx, c1 - dy) and self.board[r1 - dx][c1 - dy] == piece:
+                r1 -= dx
+                c1 -= dy
+            
+            r2, c2 = row, col
+            while is_valid(r2 + dx, c2 + dy) and self.board[r2 + dx][c2 + dy] == piece:
+                r2 += dx
+                c2 += dy
+                
+            block_start = (r1 - dx, c1 - dy)
+            block_end = (r2 + dx, c2 + dy)
+
+            consecutive_count = 0
+            temp_r, temp_c = r1, c1
+            win_line = []
+            while is_valid(temp_r, temp_c) and self.board[temp_r][temp_c] == piece:
+                win_line.append((temp_r, temp_c))
+                consecutive_count += 1
+                temp_r += dx
+                temp_c += dy
+            
+            
+            if consecutive_count >= 5:
+                
+                if consecutive_count == 5:
+                    
+                    is_blocked_start = False
+                    if is_valid(block_start[0], block_start[1]) and \
+                       self.board[block_start[0]][block_start[1]] == opponent_piece:
+                        is_blocked_start = True
+
+                    is_blocked_end = False
+                    if is_valid(block_end[0], block_end[1]) and \
+                       self.board[block_end[0]][block_end[1]] == opponent_piece:
+                        is_blocked_end = True
+                        
+                    if is_blocked_start and is_blocked_end:
+                        continue 
+                
+                return win_line
+                
+        return None
