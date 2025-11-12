@@ -52,14 +52,6 @@ class CaroClientMulti:
         self.exit_btn.pack(side=tk.RIGHT)
         
         # Khởi tạo biến game
-        self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
-        self.turn = None
-        self.role = None
-        self.server_addr = None
-        self.game_over = False
-        self.opponent_disconnected = False
-        self.last_move = None
-        self.win_line = None
 
         # Bind events
         self.canvas.bind("<Button-1>", self.handle_click)
@@ -81,6 +73,15 @@ class CaroClientMulti:
             self.canvas.create_line(i*CELL_SIZE, 0, i*CELL_SIZE, BOARD_SIZE*CELL_SIZE, fill="gray", tags="grid")
             self.canvas.create_line(0, i*CELL_SIZE, BOARD_SIZE*CELL_SIZE, i*CELL_SIZE, fill="gray", tags="grid")
         self.redraw_pieces()
+
+self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+        self.turn = None
+        self.role = None
+        self.server_addr = None
+        self.game_over = False
+        self.opponent_disconnected = False
+        self.last_move = None
+        self.win_line = None
 
     def redraw_pieces(self):
         self.canvas.delete("piece")
