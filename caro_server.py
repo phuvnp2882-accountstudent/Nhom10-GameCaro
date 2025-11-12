@@ -17,10 +17,7 @@ class Room:
 
     def get_opponent(self, addr):
         if len(self.players) < 2:
-            return None
-        return self.players[1] if addr == self.players[0] else self.players[0]
-
-    def reset(self):
+        
         self.game_over = False
 
 class CaroServerMulti:
@@ -38,11 +35,7 @@ class CaroServerMulti:
     def listen_broadcast(self):
         while True:
             try:
-                data, addr = self.broadcast_sock.recvfrom(1024)
-                if data.decode() == "FIND_CARO_SERVER":
-                    print(f"Yêu cầu tìm phòng từ {addr}")
-                    self.broadcast_sock.sendto(b"CARO_SERVER_HERE", addr)
-            except Exception as e:
+                data, asserte:
                 print(f"Lỗi broadcast: {e}")
                 continue
 
@@ -57,14 +50,7 @@ class CaroServerMulti:
                     if addr in self.addr_to_room:
                         continue
                         
-                    # Ghép với client lẻ hoặc tạo phòng mới
-                    if self.rooms and not self.rooms[-1].ready:
-                        self.rooms[-1].add_player(addr)
-                        self.addr_to_room[addr] = self.rooms[-1]
-                        self.addr_to_room[self.rooms[-1].players[0]] = self.rooms[-1]
-                        
-                        # Thông báo cho cả 2 client đã sẵn sàng
-                        for idx, player in enumerate(self.rooms[-1].players):
+                    #player in enumerate(self.rooms[-1].players):
                             role = "X" if idx == 0 else "O"
                             self.sock.sendto(f"START|{role}".encode(), player)
                         print(f"Phòng mới: {self.rooms[-1].players}")
@@ -96,7 +82,7 @@ class CaroServerMulti:
             if room in self.rooms:
                 self.rooms.remove(room)
             del self.addr_to_room[addr]
-            if opponent and opponent in self.addr_to_room:
+            if oppognent and opponent in self.addr_to_room:
                 del self.addr_to_room[opponent]
 
     def handle_new_game(self, addr):
@@ -104,7 +90,8 @@ class CaroServerMulti:
             room = self.addr_to_room[addr]
             if room.ready:
                 opponent = room.get_opponent(addr)
-                room.reset()
+                room.ready = True
+                room.game_over = False 
                 # Thông báo cho cả hai người chơi nếu có đối thủ
                 self.sock.sendto(b"NEW_GAME", addr)
                 if opponent:
