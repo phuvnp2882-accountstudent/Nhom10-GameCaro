@@ -33,7 +33,7 @@ class CaroServerMulti:
         self.broadcast_sock.bind(("", BROADCAST_PORT))
         self.rooms = []
         self.addr_to_room = {}
-        print("Server sẵn sàng!")
+        print("Server đã sẵn sàng!")
     
     def listen_broadcast(self):
         while True:
@@ -43,7 +43,7 @@ class CaroServerMulti:
                     print(f"Yêu cầu tìm phòng từ {addr}")
                     self.broadcast_sock.sendto(b"CARO_SERVER_HERE", addr)
             except Exception as e:
-                # print(f"Lỗi broadcast: {e}")
+                print(f"Lỗi broadcast: {e}")
                 continue
 
     def listen_game(self):
