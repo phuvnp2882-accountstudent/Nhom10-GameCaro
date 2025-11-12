@@ -74,7 +74,9 @@ class CaroClientMulti:
         
         threading.Thread(target=self.find_server_and_join, daemon=True).start()
         threading.Thread(target=self.listen_server, daemon=True).start()
-  self.canvas.delete("grid")
+ 
+    def draw_board(self):
+        self.canvas.delete("grid")
         for i in range(BOARD_SIZE):
             self.canvas.create_line(i*CELL_SIZE, 0, i*CELL_SIZE, BOARD_SIZE*CELL_SIZE, fill="gray", tags="grid")
             self.canvas.create_line(0, i*CELL_SIZE, BOARD_SIZE*CELL_SIZE, i*CELL_SIZE, fill="gray", tags="grid")
@@ -93,7 +95,7 @@ class CaroClientMulti:
             self.highlight_win_line(self.win_line)
 
     def handle_click(self, event):
-      
+        # Kiểm tra nếu chưa gán vai trò, chưa phải lượt mình, game kết thúc, hoặc đối thủ thoát
         if self.role is None or self.turn != self.role or self.game_over or not self.server_addr or self.opponent_disconnected:
             if self.role is None:
                 print("Chưa gán vai trò (X/O). Vui lòng đợi Server ghép cặp.")
@@ -136,6 +138,12 @@ class CaroClientMulti:
             time.sleep(0.12)
         self.redraw_pieces()
 
+    def send_move(self, row, col):
+        if self.server_addr:
+            msg = f"MOVE|{row},{col}"
+            self.sock.sendto(msg.encode(), self.server_addr)
+
+    def listen_server(self):
         while True:
             try:
                 data, addr = self.sock.recvfrom(1024)
