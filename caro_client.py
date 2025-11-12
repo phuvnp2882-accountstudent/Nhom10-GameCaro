@@ -14,7 +14,7 @@ BG_COLOR = "#e3f2fd"  # xanh nhạt
 MY_TURN_COLOR = "#388e3c"  # xanh lá
 OPP_TURN_COLOR = "#d32f2f"  # đỏ
   
-  
+class CaroClientMulti:
    def __init__(self):
         self.window = tk.Tk()
         self.window.title("Game Caro")
@@ -55,10 +55,8 @@ OPP_TURN_COLOR = "#d32f2f"  # đỏ
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.turn = None
         self.role = None
-
-
-
-         self.game_over = False
+        self.server_add = None
+        self.game_over = False
         self.opponent_disconnected = False
         self.last_move = None
         self.win_line = None
