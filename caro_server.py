@@ -4,6 +4,17 @@ import threading
 PORT = 5002
 BROADCAST_PORT = 5001
 
+class Room:
+    def __init__(self, player1_addr):
+        self.players = [player1_addr]
+        self.ready = False
+        self.game_over = False
+
+    def add_player(self, player2_addr):
+        self.players.append(player2_addr)
+        self.ready = True
+        self.game_over = False
+
     def get_opponent(self, addr):
         if len(self.players) < 2:
             return None
@@ -61,16 +72,7 @@ class CaroServerMulti:
                         room = Room(addr)
                         self.rooms.append(room)
                         self.addr_to_room[addr] = room
-                    ass Room:
-    def __init__(self, player1_addr):
-        self.players = [player1_addr]
-        self.ready = False
-        self.game_over = False
-
-    def add_player(self, player2_addr):
-        self.players.append(player2_addr)
-        self.ready = True
-        self.game_over = False
+                    
                 elif msg == "EXIT":
                     self.handle_exit(addr)
                 
