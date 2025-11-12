@@ -138,6 +138,77 @@ OPP_TURN_COLOR = "#d32f2f"  # đỏ
             time.sleep(0.12)
         self.redraw_pieces()
 
+        while True:
+            try:
+                data, addr = self.sock.recvfrom(1024)
+                msg = data.decode()
+                
+                if msg.startswith("START"):
+                    _, role = msg.split("|")
+                    self.role = role
+                    self.turn = "X" 
+                    self.game_over = False 
+                    self.role_label.config(text=f"Bạn là {self.role}")
+                    if self.role == "X":
+                        self.status_label.config(text="Bạn đi trước!", foreground=MY_TURN_COLOR)
+                    else:
+                        self.status_label.config(text="Đối thủ đi trước!", foreground=OPP_TURN_COLOR)
+                    messagebox.showinfo("Bắt đầu", f"Bạn là {self.role}. {'Bạn đi trước!' if self.role == 'X' else 'Đối thủ đi trước!'}")
+                
+                elif msg.startswith("MOVE"):
+                    _, coords = msg.split("|")
+                    row, col = map(int, coords.split(","))
+                    opp = "O" if self.role == "X" else "X"
+                    
+                    if self.board[row][col] is None:
+                        self.board[row][col] = opp
+                        self.last_move = (row, col)
+                        self.redraw_pieces()
+                        self.animate_piece(row, col, opp)
+                        win_line = self.check_win(row, col, opp)
+                        if win_line:
+                            self.game_over = True
+                            self.win_line = win_line
+                            self.redraw_pieces()
+                            self.status_label.config(text="Bạn đã thua!", foreground=OPP_TURN_COLOR)
+                            self.new_game_btn.config(state=tk.NORMAL)
+                            messagebox.showinfo("Kết thúc", "Bạn đã thua!")
+                        else:
+                            self.turn = self.role
+                            self.status_label.config(text="Đến lượt bạn", foreground=MY_TURN_COLOR)
+                
+                elif msg == "OPPONENT_DISCONNECTED":
+                    self.opponent_disconnected = True
+                    self.status_label.config(text="Đối thủ đã thoát!", foreground=OPP_TURN_COLOR)
+                    self.new_game_btn.config(state=tk.NORMAL)
+                    messagebox.showinfo("Thông báo", "Đối thủ đã thoát game!")
+                
+                elif msg == "NEW_GAME":
+                    self.reset_game()
+                    
+            except Exception as e:
+                print(f"Lỗi nhận tin nhắn: {e}")
+                break
+
+    def find_server_and_join(self):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.settimeout(3)
+        broadcast_addr = ('<broadcast>', BROADCAST_PORT)
+        
+        while not self.server_addr:
+            try:
+                sock.sendto(b"FIND_CARO_SERVER", broadcast_addr)
+                data, addr = sock.recvfrom(1024)
+                if data.decode() == "CARO_SERVER_HERE":
+                    self.server_addr = (addr[0], PORT)
+                    self.status_label.config(text="Đã kết nối với server", foreground=MY_TURN_COLOR)
+                    self.sock.sendto(b"JOIN_ROOM", self.server_addr)
+                    time.sleep(0.5) 
+            except socket.timeout:
+                continue
+        sock.close()
+
 # HÀM KIỂM TRA THẮNG THUA (LUẬT CHẶN 2 ĐẦU)
     def check_win(self, row, col, piece):
         
@@ -192,3 +263,36 @@ OPP_TURN_COLOR = "#d32f2f"  # đỏ
                 return win_line
                 
         return None
+
+        
+        self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
+        self.game_over = False
+        self.opponent_disconnected = False
+        self.last_move = None
+        self.win_line = None
+        self.canvas.delete("all")
+        self.draw_board()
+        
+        self.turn = "X"
+        if self.role == "X":
+            self.status_label.config(text="Bạn đi trước!", foreground=MY_TURN_COLOR)
+        else:
+            self.status_label.config(text="Đối thủ đi trước!", foreground=OPP_TURN_COLOR)
+            
+        self.new_game_btn.config(state=tk.DISABLED)
+
+    def new_game(self):
+        if self.server_addr:
+            self.sock.sendto(b"NEW_GAME", self.server_addr)
+            self.reset_game() 
+
+    def exit_game(self):
+        if self.server_addr:
+            self.sock.sendto(b"EXIT", self.server_addr)
+        self.window.destroy()
+
+    def run(self):
+        self.window.mainloop()
+
+if __name__ == "__main__":
+    CaroClientMulti().run()
