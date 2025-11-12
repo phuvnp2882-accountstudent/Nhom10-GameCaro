@@ -75,14 +75,14 @@ class CaroClientMulti:
         threading.Thread(target=self.find_server_and_join, daemon=True).start()
         threading.Thread(target=self.listen_server, daemon=True).start()
  
-    def draw_board(self):
+def draw_board(self):
         self.canvas.delete("grid")
         for i in range(BOARD_SIZE):
             self.canvas.create_line(i*CELL_SIZE, 0, i*CELL_SIZE, BOARD_SIZE*CELL_SIZE, fill="gray", tags="grid")
             self.canvas.create_line(0, i*CELL_SIZE, BOARD_SIZE*CELL_SIZE, i*CELL_SIZE, fill="gray", tags="grid")
         self.redraw_pieces()
 
-    def redraw_pieces(self):
+def redraw_pieces(self):
         self.canvas.delete("piece")
         self.canvas.delete("highlight")
         for i in range(BOARD_SIZE):
@@ -94,7 +94,7 @@ class CaroClientMulti:
         if self.win_line:
             self.highlight_win_line(self.win_line)
 
-    def handle_click(self, event):
+def handle_click(self, event):
         # Kiểm tra nếu chưa gán vai trò, chưa phải lượt mình, game kết thúc, hoặc đối thủ thoát
         if self.role is None or self.turn != self.role or self.game_over or not self.server_addr or self.opponent_disconnected:
             if self.role is None:
@@ -120,7 +120,7 @@ class CaroClientMulti:
                 self.turn = "O" if self.role == "X" else "X"
                 self.status_label.config(text="Đến lượt đối thủ", foreground=OPP_TURN_COLOR)
 
-    def draw_piece(self, row, col, piece, highlight=False):
+def draw_piece(self, row, col, piece, highlight=False):
         x, y = col*CELL_SIZE+CELL_SIZE//2, row*CELL_SIZE+CELL_SIZE//2
         color = "red" if piece == "O" else "blue"
         font = ("Arial", 22, "bold")
@@ -128,7 +128,7 @@ class CaroClientMulti:
             self.canvas.create_rectangle(col*CELL_SIZE, row*CELL_SIZE, (col+1)*CELL_SIZE, (row+1)*CELL_SIZE, fill=HIGHLIGHT_COLOR, outline="", tags="highlight")
         self.canvas.create_text(x, y, text=piece, font=font, fill=color, tags="piece")
 
-    def animate_piece(self, row, col, piece):
+def animate_piece(self, row, col, piece):
         for _ in range(2):
             self.canvas.create_rectangle(col*CELL_SIZE, row*CELL_SIZE, (col+1)*CELL_SIZE, (row+1)*CELL_SIZE, fill=HIGHLIGHT_COLOR, outline="", tags="highlight")
             self.window.update()
@@ -138,12 +138,12 @@ class CaroClientMulti:
             time.sleep(0.12)
         self.redraw_pieces()
 
-    def send_move(self, row, col):
+def send_move(self, row, col):
         if self.server_addr:
             msg = f"MOVE|{row},{col}"
             self.sock.sendto(msg.encode(), self.server_addr)
 
-    def listen_server(self):
+def listen_server(self):
         while True:
             try:
                 data, addr = self.sock.recvfrom(1024)
@@ -196,7 +196,7 @@ class CaroClientMulti:
                 print(f"Lỗi nhận tin nhắn: {e}")
                 break
 
-    def find_server_and_join(self):
+def find_server_and_join(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.settimeout(3)
@@ -215,8 +215,8 @@ class CaroClientMulti:
                 continue
         sock.close()
 
-# HÀM KIỂM TRA THẮNG THUA (LUẬT CHẶN 2 ĐẦU)
-    def check_win(self, row, col, piece):
+    # HÀM KIỂM TRA THẮNG THUA (LUẬT CHẶN 2 ĐẦU)
+def check_win(self, row, col, piece):
         
         def is_valid(r, c):
             return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
@@ -269,8 +269,12 @@ class CaroClientMulti:
                 return win_line
                 
         return None
-
         
+def highlight_win_line(self, win_line):
+        for (row, col) in win_line:
+            self.canvas.create_rectangle(col*CELL_SIZE, row*CELL_SIZE, (col+1)*CELL_SIZE, (row+1)*CELL_SIZE, outline="#fbc02d", width=4, tags="highlight")
+
+def reset_game(self):
         self.board = [[None for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
         self.game_over = False
         self.opponent_disconnected = False
@@ -287,18 +291,18 @@ class CaroClientMulti:
             
         self.new_game_btn.config(state=tk.DISABLED)
 
-    def new_game(self):
+def new_game(self):
         if self.server_addr:
             self.sock.sendto(b"NEW_GAME", self.server_addr)
             self.reset_game() 
 
-    def exit_game(self):
+def exit_game(self):
         if self.server_addr:
             self.sock.sendto(b"EXIT", self.server_addr)
         self.window.destroy()
 
-    def run(self):
+def run(self):
         self.window.mainloop()
-
+        
 if __name__ == "__main__":
     CaroClientMulti().run()
